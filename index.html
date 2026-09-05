@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Neon Horizon - Cyberpunk 3D High-Speed Arcade</title>
+  <meta name="description" content="Juego 3D de carreras y esquiva de alta velocidad ambientado en una metrópoli Synthwave futurista con Three.js y audio procedural.">
+  <link rel="stylesheet" href="style.css">
+  <!-- Three.js CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+</head>
+<body>
+  <!-- 3D Canvas Container -->
+  <div id="canvas-container"></div>
+
+  <!-- Scanline CRT Effect Filter -->
+  <div class="scanlines"></div>
+
+  <!-- Divisores Split-Screen (para 2 y 3 vías) -->
+  <div id="splitscreen-divider-1" class="screen-divider-line"></div>
+  <div id="splitscreen-divider-3p-left" class="screen-divider-line"></div>
+  <div id="splitscreen-divider-3p-right" class="screen-divider-line"></div>
+
+  <!-- Damage Flash screen -->
+  <div id="damage-flash"></div>
+
+  <!-- Botón de Audio y Botón de Pausa Flotantes -->
+  <div style="position: absolute; top: 24px; right: 24px; z-index: 30; display: flex; gap: 10px;">
+    <button id="btn-pause" class="audio-btn">⏸️ PAUSA [P]</button>
+    <button id="btn-audio" class="audio-btn">🔊 AUDIO: ON</button>
+  </div>
+
+  <!-- HUD In-Game -->
+  <div id="hud">
+    <div class="hud-header" style="display: flex; flex-direction: column; width: 100%; gap: 8px;">
+      <!-- Meta del Juego en 2P y 3P -->
+      <div id="goal-container" class="goal-banner" style="display: none; align-self: center;">
+        🏆 META: 10,000 PUNTOS O 5,000 METROS
+      </div>
+
+      <div class="hud-top">
+      <!-- Player 1 Box -->
+      <div id="p1-hud" class="glass-panel hud-stat-box">
+        <span class="hud-label p1-color">P1 (CIAN)</span>
+        <span id="p1-score-display" class="hud-value p1-color">0000 pts</span>
+        <div style="display: flex; gap: 10px; font-size: 13px;">
+          <span id="p1-dist-display">0 m</span>
+          <span id="p1-status-badge" style="color: #00f0ff;">⚡ VIVO</span>
+        </div>
+      </div>
+
+      <!-- Player 2 Box (Visible en 2P y 3P) -->
+      <div id="p2-hud" class="glass-panel hud-stat-box" style="display: none;">
+        <span class="hud-label p2-color">P2 (MAGENTA)</span>
+        <span id="p2-score-display" class="hud-value p2-color">0000 pts</span>
+        <div style="display: flex; gap: 10px; font-size: 13px;">
+          <span id="p2-dist-display">0 m</span>
+          <span id="p2-status-badge" style="color: #ff007f;">⚡ VIVO</span>
+        </div>
+      </div>
+
+      <!-- Player 3 Box (Visible en 3P) -->
+      <div id="p3-hud" class="glass-panel hud-stat-box" style="display: none; text-align: right;">
+        <span class="hud-label p3-color">P3 (AMARILLO)</span>
+        <span id="p3-score-display" class="hud-value p3-color">0000 pts</span>
+        <div style="display: flex; justify-content: flex-end; gap: 10px; font-size: 13px;">
+          <span id="p3-dist-display">0 m</span>
+          <span id="p3-status-badge" style="color: #ffe600;">⚡ VIVO</span>
+        </div>
+      </div>
+
+      <!-- Single Player Record Box -->
+      <div id="single-record-hud" class="glass-panel hud-stat-box" style="text-align: right;">
+        <span class="hud-label">RÉCORD</span>
+        <span id="highscore-display" class="hud-value highlight">0000 m</span>
+        <span id="cores-collected-display" class="hud-combo-badge" style="color: var(--neon-cyan);">⚡ CORES: 0</span>
+      </div>
+    </div>
+  </div>
+
+    <div class="hud-bottom">
+      <div class="glass-panel boost-container">
+        <div style="display: flex; justify-content: space-between;">
+          <span class="hud-label">TURBO [P1: W] [P2: ↑] [P3: I]</span>
+          <span id="boost-status" class="hud-label" style="color: var(--neon-pink);">LISTO</span>
+        </div>
+        <div class="meter-wrapper">
+          <div id="boost-bar"></div>
+        </div>
+      </div>
+
+      <div class="glass-panel speedometer-box">
+        <span class="hud-label">VELOCIDAD</span>
+        <div style="display: flex; align-items: baseline; justify-content: flex-end; gap: 6px;">
+          <span id="speed-display">160</span>
+          <span class="speed-unit">KM/H</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pantalla de Inicio / Start Screen -->
+  <div id="start-screen" class="screen-overlay">
+    <div class="modal-content" style="max-width: 760px;">
+      <h1 class="game-title">NEON HORIZON</h1>
+      <p class="game-subtitle">CYBERPUNK 3D ARCADE</p>
+
+      <!-- Selector de Modo -->
+      <div class="mode-selector">
+        <button id="btn-mode-1p" class="mode-btn active">👤 1 JUGADOR</button>
+        <button id="btn-mode-2p" class="mode-btn p2-btn">👥 2 JUGADORES</button>
+        <button id="btn-mode-3p" class="mode-btn p3-btn">🚀 3 JUGADORES (3 VÍAS)</button>
+      </div>
+
+      <!-- Instrucciones 1 Jugador -->
+      <div id="instructions-1p" class="instructions-grid">
+        <div class="instruction-item">
+          <span class="key-tag">A / D</span> o <span class="key-tag">← / →</span><br>Maniobra & Inclinación
+        </div>
+        <div class="instruction-item">
+          <span class="key-tag">ESPACIO</span><br>💥 Disparo Láser
+        </div>
+        <div class="instruction-item">
+          <span class="key-tag">W</span> o <span class="key-tag">↑</span><br>Turbo / Overdrive
+        </div>
+        <div class="instruction-item">
+          <span class="key-tag">P</span><br>Pausa
+        </div>
+      </div>
+
+      <!-- Instrucciones 2 Jugadores -->
+      <div id="instructions-2p" class="instructions-grid" style="display: none;">
+        <div class="instruction-item" style="border-left-color: var(--neon-cyan);">
+          <strong style="color: var(--neon-cyan);">JUGADOR 1 (Cian):</strong><br>
+          <span class="key-tag">A / D</span> Moverse<br>
+          <span class="key-tag">ESPACIO</span> Disparar<br>
+          <span class="key-tag">W</span> Turbo
+        </div>
+        <div class="instruction-item" style="border-left-color: var(--neon-pink);">
+          <strong style="color: var(--neon-pink);">JUGADOR 2 (Magenta):</strong><br>
+          <span class="key-tag">← / →</span> Moverse<br>
+          <span class="key-tag">ENTER</span> Disparar<br>
+          <span class="key-tag">↑</span> Turbo
+        </div>
+      </div>
+
+      <!-- Instrucciones 3 Jugadores (3 Vías - Solo Orbes) -->
+      <div id="instructions-3p" class="instructions-grid" style="display: none; grid-template-columns: repeat(3, 1fr);">
+        <div class="instruction-item" style="border-left-color: var(--neon-cyan);">
+          <strong style="color: var(--neon-cyan);">P1 (Cian - Izq):</strong><br>
+          <span class="key-tag">A / D</span> Moverse<br>
+          <span class="key-tag">W</span> Turbo
+        </div>
+        <div class="instruction-item" style="border-left-color: var(--neon-pink);">
+          <strong style="color: var(--neon-pink);">P2 (Magenta - Centro):</strong><br>
+          <span class="key-tag">← / →</span> Moverse<br>
+          <span class="key-tag">↑</span> Turbo
+        </div>
+        <div class="instruction-item" style="border-left-color: var(--neon-yellow);">
+          <strong style="color: var(--neon-yellow);">P3 (Amarillo - Der):</strong><br>
+          <span class="key-tag">J / L</span> Moverse<br>
+          <span class="key-tag">I</span> Turbo
+        </div>
+      </div>
+
+      <div id="rules-banner-2p" style="display: none; margin-bottom: 20px; font-size: 13px; color: #ffe600; background: rgba(255, 230, 0, 0.1); padding: 10px; border-radius: 6px; border: 1px dashed #ffe600; text-align: left;">
+        🏁 <strong>Condición de Duelo (2P):</strong> Pista de 2 carriles con armas y obstáculos. Gana quien consiga <strong>10,000 pts</strong> o cruce la meta a <strong>5,000m</strong>.
+      </div>
+
+      <div id="rules-banner-3p" style="display: none; margin-bottom: 20px; font-size: 13px; color: var(--neon-cyan); background: rgba(0, 240, 255, 0.1); padding: 10px; border-radius: 6px; border: 1px dashed var(--neon-cyan); text-align: left;">
+        ✨ <strong>Modo 3 Vías (Carrera Pura de Orbes):</strong> ¡Cero obstáculos! 3 vías independientes separadas por barreras de luz. Recoge núcleos de energía cuántica para adelantar a tus rivales y alcanzar la meta.
+      </div>
+
+      <button id="btn-start" class="btn-neon">INICIAR MISIÓN</button>
+    </div>
+  </div>
+
+  <!-- Pantalla de Pausa -->
+  <div id="pause-screen" class="screen-overlay hidden">
+    <div class="modal-content" style="border-color: var(--neon-yellow); box-shadow: 0 0 40px rgba(255, 230, 0, 0.35);">
+      <h1 class="game-title" style="background: linear-gradient(135deg, #fff, var(--neon-yellow)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">MISIÓN EN PAUSA</h1>
+      <p class="game-subtitle">SISTEMA DE NAVEGACIÓN EN ESPERA</p>
+      <button id="btn-resume" class="btn-neon" style="background: var(--neon-yellow); box-shadow: 0 0 25px var(--neon-yellow);">REANUDAR</button>
+    </div>
+  </div>
+
+  <!-- Pantalla de Fin de Juego / Victoria -->
+  <div id="gameover-screen" class="screen-overlay hidden">
+    <div class="modal-content">
+      <h1 id="gameover-title" class="game-title" style="background: linear-gradient(135deg, #ff0055, #ff7700); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">SEÑAL PERDIDA</h1>
+      <p id="gameover-subtitle" class="game-subtitle">EL VEHÍCULO HA SIDO DESTRUIDO</p>
+
+      <div id="single-result-box" style="margin: 24px 0; display: flex; justify-content: space-around;">
+        <div>
+          <span class="hud-label">DISTANCIA FINAL</span>
+          <div id="final-score" class="hud-value" style="font-size: 38px;">0 m</div>
+        </div>
+        <div>
+          <span class="hud-label">CORES RECOGIDOS</span>
+          <div id="final-cores" class="hud-value highlight" style="font-size: 38px;">0</div>
+        </div>
+      </div>
+
+      <div id="p2-result-box" style="display: none; margin: 24px 0; justify-content: space-around;">
+        <div>
+          <span class="hud-label p1-color">P1 PUNTAJE</span>
+          <div id="p1-final-score" class="hud-value p1-color" style="font-size: 30px;">0</div>
+        </div>
+        <div>
+          <span class="hud-label p2-color">P2 PUNTAJE</span>
+          <div id="p2-final-score" class="hud-value p2-color" style="font-size: 30px;">0</div>
+        </div>
+        <div id="p3-final-box" style="display: none;">
+          <span class="hud-label p3-color">P3 PUNTAJE</span>
+          <div id="p3-final-score" class="hud-value p3-color" style="font-size: 30px;">0</div>
+        </div>
+      </div>
+
+      <button id="btn-restart" class="btn-neon">REINTENTAR</button>
+    </div>
+  </div>
+
+  <!-- Audio procedural & Core Game Script -->
+  <script src="audio.js"></script>
+  <script src="main.js"></script>
+</body>
+</html>

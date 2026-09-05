@@ -1,0 +1,424 @@
+/* style.css - Cyberpunk Synthwave Premium HUD & Menus */
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;800;900&family=Rajdhani:wght@500;700&display=swap');
+
+:root {
+  --neon-cyan: #00f0ff;
+  --neon-pink: #ff007f;
+  --neon-purple: #9d00ff;
+  --neon-yellow: #ffe600;
+  --bg-dark: #05050f;
+  --hud-glass: rgba(10, 15, 30, 0.65);
+  --hud-border: rgba(0, 240, 255, 0.35);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  user-select: none;
+}
+
+body, html {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background-color: var(--bg-dark);
+  font-family: 'Rajdhani', sans-serif;
+  color: #ffffff;
+}
+
+#canvas-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+}
+
+/* Glassmorphism Scanlines Overlay */
+.scanlines {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 2;
+  background: linear-gradient(
+    rgba(18, 16, 16, 0) 50%, 
+    rgba(0, 0, 0, 0.25) 50%
+  ), linear-gradient(
+    90deg,
+    rgba(255, 0, 0, 0.03),
+    rgba(0, 255, 0, 0.01),
+    rgba(0, 0, 255, 0.03)
+  );
+  background-size: 100% 4px, 6px 100%;
+}
+
+/* HUD Overlay */
+#hud {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 10;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 24px;
+}
+
+.hud-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.glass-panel {
+  background: var(--hud-glass);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--hud-border);
+  box-shadow: 0 8px 32px 0 rgba(0, 240, 255, 0.15), inset 0 0 15px rgba(0, 240, 255, 0.08);
+  border-radius: 12px;
+  padding: 12px 20px;
+}
+
+.hud-stat-box {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.hud-label {
+  font-family: 'Orbitron', monospace;
+  font-size: 11px;
+  letter-spacing: 2px;
+  color: var(--neon-cyan);
+  text-transform: uppercase;
+}
+
+.hud-value {
+  font-family: 'Orbitron', monospace;
+  font-size: 32px;
+  font-weight: 800;
+  color: #fff;
+  text-shadow: 0 0 10px var(--neon-cyan);
+}
+
+.hud-value.highlight {
+  color: var(--neon-yellow);
+  text-shadow: 0 0 12px var(--neon-yellow);
+}
+
+.hud-combo-badge {
+  font-size: 14px;
+  color: var(--neon-pink);
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-shadow: 0 0 8px var(--neon-pink);
+  margin-top: 4px;
+}
+
+/* Energy & Boost Meter */
+.hud-bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+}
+
+.boost-container {
+  width: 280px;
+}
+
+.meter-wrapper {
+  width: 100%;
+  height: 14px;
+  background: rgba(0, 0, 0, 0.5);
+  border: 1px solid var(--neon-cyan);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-top: 6px;
+  position: relative;
+}
+
+#boost-bar {
+  width: 0%;
+  height: 100%;
+  background: linear-gradient(90deg, var(--neon-cyan), var(--neon-pink));
+  box-shadow: 0 0 15px var(--neon-pink);
+  transition: width 0.15s ease-out;
+}
+
+.speedometer-box {
+  text-align: right;
+}
+
+#speed-display {
+  font-size: 48px;
+  line-height: 1;
+  color: var(--neon-cyan);
+  text-shadow: 0 0 16px var(--neon-cyan);
+}
+
+.speed-unit {
+  font-size: 14px;
+  letter-spacing: 2px;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+/* Modals and Screens (Start, Game Over) */
+.screen-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 20;
+  background: radial-gradient(circle at center, rgba(15, 10, 35, 0.85) 0%, rgba(5, 5, 15, 0.95) 100%);
+  backdrop-filter: blur(8px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  pointer-events: all;
+  transition: opacity 0.3s ease;
+}
+
+.screen-overlay.hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.modal-content {
+  text-align: center;
+  max-width: 560px;
+  width: 90%;
+  padding: 40px;
+  border-radius: 16px;
+  background: rgba(12, 16, 32, 0.9);
+  border: 2px solid var(--neon-cyan);
+  box-shadow: 0 0 50px rgba(0, 240, 255, 0.25), inset 0 0 25px rgba(255, 0, 127, 0.15);
+  animation: glowPulse 4s infinite alternate;
+}
+
+@keyframes glowPulse {
+  0% { box-shadow: 0 0 30px rgba(0, 240, 255, 0.3), inset 0 0 20px rgba(255, 0, 127, 0.1); }
+  100% { box-shadow: 0 0 50px rgba(255, 0, 127, 0.4), inset 0 0 35px rgba(0, 240, 255, 0.2); }
+}
+
+.game-title {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 42px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 4px;
+  background: linear-gradient(135deg, #fff 20%, var(--neon-cyan) 60%, var(--neon-pink) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  margin-bottom: 8px;
+  filter: drop-shadow(0 0 15px rgba(0, 240, 255, 0.6));
+}
+
+.game-subtitle {
+  font-size: 16px;
+  color: rgba(255, 255, 255, 0.7);
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  margin-bottom: 30px;
+}
+
+.instructions-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  margin-bottom: 30px;
+  text-align: left;
+}
+
+.instruction-item {
+  background: rgba(255, 255, 255, 0.05);
+  padding: 10px 14px;
+  border-radius: 8px;
+  border-left: 3px solid var(--neon-cyan);
+  font-size: 14px;
+}
+
+.key-tag {
+  background: var(--neon-cyan);
+  color: #000;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: 700;
+  font-family: 'Orbitron', monospace;
+  font-size: 12px;
+}
+
+.btn-neon {
+  font-family: 'Orbitron', monospace;
+  font-size: 18px;
+  font-weight: 800;
+  padding: 14px 44px;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: #000;
+  background: var(--neon-cyan);
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  box-shadow: 0 0 25px var(--neon-cyan);
+  transition: all 0.2s ease;
+  outline: none;
+}
+
+.btn-neon:hover {
+  background: #fff;
+  box-shadow: 0 0 35px #fff, 0 0 50px var(--neon-pink);
+  transform: scale(1.05);
+}
+
+.btn-neon:active {
+  transform: scale(0.98);
+}
+
+/* Audio button floating */
+.audio-btn {
+  position: absolute;
+  top: 24px;
+  right: 24px;
+  z-index: 30;
+  background: var(--hud-glass);
+  border: 1px solid var(--hud-border);
+  color: #fff;
+  padding: 8px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-family: 'Orbitron', monospace;
+  font-size: 12px;
+  letter-spacing: 1px;
+  transition: 0.2s;
+  backdrop-filter: blur(8px);
+}
+
+.audio-btn:hover {
+  background: var(--neon-pink);
+  border-color: var(--neon-pink);
+  box-shadow: 0 0 15px var(--neon-pink);
+}
+
+/* Flash damage overlay */
+#damage-flash {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(255, 0, 60, 0.4);
+  z-index: 15;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.1s ease;
+}
+
+/* Modos 1P vs 2P selector */
+.mode-selector {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.mode-btn {
+  font-family: 'Orbitron', monospace;
+  font-size: 14px;
+  font-weight: 700;
+  padding: 10px 24px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(0, 240, 255, 0.3);
+  color: #fff;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.mode-btn.active {
+  background: var(--neon-cyan);
+  color: #000;
+.mode-btn.p3-btn.active {
+  background: var(--neon-yellow);
+  box-shadow: 0 0 20px var(--neon-yellow);
+  border-color: var(--neon-yellow);
+  color: #000;
+}
+
+/* P1, P2 y P3 HUD styling */
+.p1-color {
+  color: var(--neon-cyan) !important;
+  text-shadow: 0 0 10px var(--neon-cyan) !important;
+}
+
+.p2-color {
+  color: var(--neon-pink) !important;
+  text-shadow: 0 0 10px var(--neon-pink) !important;
+}
+
+.p3-color {
+  color: var(--neon-yellow) !important;
+  text-shadow: 0 0 10px var(--neon-yellow) !important;
+}
+
+.hud-players-container {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.player-panel {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+}
+
+.goal-banner {
+  background: rgba(255, 230, 0, 0.15);
+  border: 1px solid var(--neon-yellow);
+  color: var(--neon-yellow);
+  font-family: 'Orbitron', monospace;
+  font-size: 11px;
+  letter-spacing: 2px;
+  padding: 4px 12px;
+  border-radius: 4px;
+  text-align: center;
+  align-self: center;
+}
+
+/* Divisores Split-Screen (soporte para 2 vías y 3 vías) */
+.screen-divider-line {
+  position: absolute;
+  top: 0;
+  width: 3px;
+  height: 100%;
+  background: linear-gradient(180deg, var(--neon-cyan), var(--neon-purple), var(--neon-pink));
+  box-shadow: 0 0 15px var(--neon-cyan), 0 0 15px var(--neon-pink);
+  z-index: 5;
+  pointer-events: none;
+  display: none;
+}
+
+#splitscreen-divider-1 {
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+#splitscreen-divider-3p-left {
+  left: 33.333%;
+  transform: translateX(-50%);
+}
+
+#splitscreen-divider-3p-right {
+  left: 66.666%;
+  transform: translateX(-50%);
+}
