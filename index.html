@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>Neon Horizon - Cyberpunk 3D High-Speed Arcade</title>
   <meta name="description" content="Juego 3D de carreras y esquiva de alta velocidad ambientado en una metrópoli Synthwave futurista con Three.js y audio procedural.">
   <link rel="stylesheet" href="style.css">
@@ -24,10 +24,14 @@
   <!-- Damage Flash screen -->
   <div id="damage-flash"></div>
 
-  <!-- Botón de Audio y Botón de Pausa Flotantes -->
-  <div style="position: absolute; top: 24px; right: 24px; z-index: 30; display: flex; gap: 10px;">
-    <button id="btn-pause" class="audio-btn">⏸️ PAUSA [P]</button>
-    <button id="btn-audio" class="audio-btn">🔊 AUDIO: ON</button>
+  <!-- Botones Flotantes de Control -->
+  <div class="top-controls-bar">
+    <button id="btn-home-float" class="audio-btn home-btn" title="Pantalla inicial [E]">🏠 <span class="btn-text">INICIO [E]</span></button>
+    <button id="btn-editor-float" class="audio-btn editor-btn" title="Modo Editor de Mapas [M]">🛠️ <span class="btn-text">EDITOR [M]</span></button>
+    <button id="btn-toggle-obstacles-float" class="audio-btn obstacle-btn" title="Alternar obstáculos [O]">⚠️ <span class="btn-text">OBSTÁCULOS: ON [O]</span></button>
+    <button id="btn-pause" class="audio-btn">⏸️ <span class="btn-text">PAUSA [P]</span></button>
+    <button id="btn-audio" class="audio-btn">🔊 <span class="btn-text">AUDIO: ON</span></button>
+    <button id="btn-fullscreen" class="audio-btn fullscreen-btn" title="Pantalla Completa">⛶ <span class="btn-text">PANTALLA</span></button>
   </div>
 
   <!-- HUD In-Game -->
@@ -81,11 +85,22 @@
     <div class="hud-bottom">
       <div class="glass-panel boost-container">
         <div style="display: flex; justify-content: space-between;">
-          <span class="hud-label">TURBO [P1: W] [P2: ↑] [P3: I]</span>
+          <span class="hud-label">TURBO <span class="desktop-key-hint">[P1: W] [P2: ↑] [P3: I]</span></span>
           <span id="boost-status" class="hud-label" style="color: var(--neon-pink);">LISTO</span>
         </div>
         <div class="meter-wrapper">
           <div id="boost-bar"></div>
+        </div>
+      </div>
+
+      <!-- Missile Launcher Cooldown HUD -->
+      <div class="glass-panel missile-hud-box">
+        <div style="display: flex; justify-content: space-between; align-items: baseline; gap: 8px;">
+          <span id="missile-hud-label" class="hud-label" style="color: #ffaa00;">🚀 MISILES [Q]</span>
+          <span id="missile-status-text" class="hud-label" style="color: #00ff88; font-weight: 700;">LISTO</span>
+        </div>
+        <div class="meter-wrapper" style="border-color: rgba(255, 170, 0, 0.6);">
+          <div id="missile-cooldown-bar"></div>
         </div>
       </div>
 
@@ -112,19 +127,30 @@
         <button id="btn-mode-3p" class="mode-btn p3-btn">🚀 3 JUGADORES (3 VÍAS)</button>
       </div>
 
+      <!-- Configuración Rápida: Obstáculos -->
+      <div class="setting-row">
+        <span class="setting-label">MODO OBSTÁCULOS:</span>
+        <button id="btn-toggle-obstacles-menu" class="toggle-btn active" title="Alternar obstáculos [O]">
+          <span id="menu-obstacle-text">ACTIVADOS [ON]</span>
+        </button>
+      </div>
+
       <!-- Instrucciones 1 Jugador -->
       <div id="instructions-1p" class="instructions-grid">
         <div class="instruction-item">
           <span class="key-tag">A / D</span> o <span class="key-tag">← / →</span><br>Maniobra & Inclinación
         </div>
         <div class="instruction-item">
-          <span class="key-tag">ESPACIO</span><br>💥 Disparo Láser
+          <span class="key-tag">ESPACIO</span> Láser &nbsp;|&nbsp; <span class="key-tag">Q</span> 🚀 Misil
         </div>
         <div class="instruction-item">
           <span class="key-tag">W</span> o <span class="key-tag">↑</span><br>Turbo / Overdrive
         </div>
         <div class="instruction-item">
-          <span class="key-tag">P</span><br>Pausa
+          <span class="key-tag">P</span> Pausa &nbsp;|&nbsp; <span class="key-tag">O</span> Obst. &nbsp;|&nbsp; <span class="key-tag">E</span> Inicio
+        </div>
+        <div id="mobile-mode-hint" class="instruction-item mobile-hint-badge" style="display: none; grid-column: 1 / -1; border-left-color: var(--neon-cyan); background: rgba(0, 240, 255, 0.08); text-align: center;">
+          📱 <strong>MODO MÓVIL:</strong> Controles táctiles en pantalla [◀] [▶], [⚡ TURBO], [🔴 LÁSER] y [🚀 MISIL].
         </div>
       </div>
 
@@ -133,32 +159,35 @@
         <div class="instruction-item" style="border-left-color: var(--neon-cyan);">
           <strong style="color: var(--neon-cyan);">JUGADOR 1 (Cian):</strong><br>
           <span class="key-tag">A / D</span> Moverse<br>
-          <span class="key-tag">ESPACIO</span> Disparar<br>
+          <span class="key-tag">ESPACIO</span> Láser &nbsp;|&nbsp; <span class="key-tag">Q</span> 🚀 Misil<br>
           <span class="key-tag">W</span> Turbo
         </div>
         <div class="instruction-item" style="border-left-color: var(--neon-pink);">
           <strong style="color: var(--neon-pink);">JUGADOR 2 (Magenta):</strong><br>
           <span class="key-tag">← / →</span> Moverse<br>
-          <span class="key-tag">ENTER</span> Disparar<br>
+          <span class="key-tag">ENTER</span> Láser &nbsp;|&nbsp; <span class="key-tag">↓</span> 🚀 Misil<br>
           <span class="key-tag">↑</span> Turbo
         </div>
       </div>
 
-      <!-- Instrucciones 3 Jugadores (3 Vías - Solo Orbes) -->
+      <!-- Instrucciones 3 Jugadores (3 Vías) -->
       <div id="instructions-3p" class="instructions-grid" style="display: none; grid-template-columns: repeat(3, 1fr);">
         <div class="instruction-item" style="border-left-color: var(--neon-cyan);">
           <strong style="color: var(--neon-cyan);">P1 (Cian - Izq):</strong><br>
           <span class="key-tag">A / D</span> Moverse<br>
+          <span class="key-tag">ESPACIO</span> Láser &nbsp;|&nbsp; <span class="key-tag">Q</span> 🚀 Misil<br>
           <span class="key-tag">W</span> Turbo
         </div>
         <div class="instruction-item" style="border-left-color: var(--neon-pink);">
           <strong style="color: var(--neon-pink);">P2 (Magenta - Centro):</strong><br>
           <span class="key-tag">← / →</span> Moverse<br>
+          <span class="key-tag">ENTER</span> Láser &nbsp;|&nbsp; <span class="key-tag">↓</span> 🚀 Misil<br>
           <span class="key-tag">↑</span> Turbo
         </div>
         <div class="instruction-item" style="border-left-color: var(--neon-yellow);">
           <strong style="color: var(--neon-yellow);">P3 (Amarillo - Der):</strong><br>
           <span class="key-tag">J / L</span> Moverse<br>
+          <span class="key-tag">U</span> Láser &nbsp;|&nbsp; <span class="key-tag">K</span> 🚀 Misil<br>
           <span class="key-tag">I</span> Turbo
         </div>
       </div>
@@ -168,10 +197,23 @@
       </div>
 
       <div id="rules-banner-3p" style="display: none; margin-bottom: 20px; font-size: 13px; color: var(--neon-cyan); background: rgba(0, 240, 255, 0.1); padding: 10px; border-radius: 6px; border: 1px dashed var(--neon-cyan); text-align: left;">
-        ✨ <strong>Modo 3 Vías (Carrera Pura de Orbes):</strong> ¡Cero obstáculos! 3 vías independientes separadas por barreras de luz. Recoge núcleos de energía cuántica para adelantar a tus rivales y alcanzar la meta.
+        ✨ <strong>Modo 3 Vías (3 Jugadores):</strong> 3 vías independientes con armas completas. Puedes <strong>poner y quitar los obstáculos con [O]</strong> en cualquier momento. Gana quien consiga <strong>10,000 pts</strong>, cruce la meta a <strong>5,000m</strong> o sobreviva a sus rivales.
+      </div>
+
+      <div id="barrier-tip-banner" style="margin-bottom: 20px; font-size: 13px; line-height: 1.6; background: rgba(0, 0, 0, 0.45); padding: 10px 14px; border-radius: 6px; border: 1px solid rgba(255, 255, 255, 0.2); text-align: left;">
+        <div style="color: #ffe600; margin-bottom: 4px;">
+          🚀 <strong>Barreras Amarillas:</strong> Blindadas contra láser. ¡Solo se rompen con <strong>Misiles [Q / ↓ / K]</strong> (Recarga: 1.5s)!
+        </div>
+        <div style="color: #ff3355; margin-bottom: 4px;">
+          💥 <strong>Barreras Rojas:</strong> ¡Se rompen con <strong>Disparos Láser [ESPACIO / ENTER]</strong> o Misiles!
+        </div>
+        <div style="color: #ffaa00;">
+          🪐 <strong>Planetas (Minas):</strong> ¡Se rompen con <strong>Disparos Láser [ESPACIO / ENTER]</strong> o Misiles!
+        </div>
       </div>
 
       <button id="btn-start" class="btn-neon">INICIAR MISIÓN</button>
+      <button id="btn-open-editor" class="btn-neon" style="background: linear-gradient(135deg, rgba(0, 240, 255, 0.25), rgba(157, 0, 255, 0.45)); border-color: var(--neon-cyan); margin-top: 10px; width: 100%;">🛠️ MODO EDITOR DE MAPAS [M]</button>
     </div>
   </div>
 
@@ -216,7 +258,119 @@
         </div>
       </div>
 
-      <button id="btn-restart" class="btn-neon">REINTENTAR</button>
+      <div style="display: flex; gap: 14px; justify-content: center; flex-wrap: wrap;">
+        <button id="btn-back-to-editor" class="btn-neon" style="display: none; background: linear-gradient(135deg, rgba(0, 240, 255, 0.35), rgba(157, 0, 255, 0.55)); border-color: var(--neon-cyan); box-shadow: 0 0 16px rgba(0, 240, 255, 0.4);">🛠️ VOLVER AL EDITOR</button>
+        <button id="btn-restart" class="btn-neon">REINTENTAR</button>
+        <button id="btn-menu-gameover" class="btn-neon" style="background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.3); box-shadow: none;">🏠 INICIO [E]</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Interfaz del Modo Editor 3D -->
+  <div id="editor-ui" class="editor-overlay hidden">
+    <!-- Barra Superior del Editor -->
+    <div class="editor-top-bar glass-panel">
+      <div class="editor-title-group">
+        <span class="editor-badge">🛠️ EDITOR 3D</span>
+        <span id="editor-coord-display" class="editor-coord">Z: -0 m | CARRIL: 0</span>
+        <span id="editor-count-display" class="editor-count">OBJETOS: 0</span>
+      </div>
+      <div class="editor-actions-group">
+        <button id="btn-editor-play" class="editor-action-btn play-btn" title="Probar el mapa que creaste">▶️ JUGAR MAPA</button>
+        <button id="btn-editor-save" class="editor-action-btn" title="Guardar mapa en navegador">💾 GUARDAR</button>
+        <button id="btn-editor-load" class="editor-action-btn" title="Cargar mapa guardado">📂 CARGAR</button>
+        <button id="btn-editor-clear" class="editor-action-btn danger-btn" title="Limpiar todos los objetos">🗑️ LIMPIAR</button>
+        <button id="btn-editor-exit" class="editor-action-btn" title="Volver al menú de inicio">🏠 SALIR</button>
+      </div>
+    </div>
+
+    <!-- Guía de Controles del Editor -->
+    <div class="editor-hints glass-panel">
+      <span>🖱️ <strong>Clic Izq:</strong> Colocar objeto</span>
+      <span>🖱️ <strong>Clic Der:</strong> Borrar objeto</span>
+      <span>⌨️ <strong>W / S o Flechas:</strong> Desplazarse por la pista</span>
+      <span>🎡 <strong>Rueda:</strong> Zoom</span>
+      <span>⌨️ <strong>1 al 8:</strong> Seleccionar elemento</span>
+    </div>
+
+    <!-- Paleta Inferior de Elementos -->
+    <div class="editor-bottom-palette glass-panel">
+      <div class="palette-tools-row">
+        <button id="btn-tool-place" class="palette-tool-btn active">✏️ COLOCAR</button>
+        <button id="btn-tool-delete" class="palette-tool-btn">❌ BORRAR</button>
+        <div class="editor-snap-toggle">
+          <label><input type="checkbox" id="chk-grid-snap" checked> 🧲 Ajustar a carriles</label>
+        </div>
+      </div>
+
+      <div class="palette-items-grid">
+        <button class="palette-item active" data-type="speed_ring" title="Anillo de Hipervelocidad: Duplica velocidad y rellena turbo al 100%">
+          <span class="palette-icon">⚡</span>
+          <span class="palette-name">Anillo Turbo</span>
+          <span class="palette-tag new-tag">NUEVO</span>
+        </button>
+        <button class="palette-item" data-type="jump_pad" title="Rampa de Salto Cuántica: Catapulta la nave por los aires sobre obstáculos">
+          <span class="palette-icon">🔼</span>
+          <span class="palette-name">Rampa Salto</span>
+          <span class="palette-tag new-tag">NUEVO</span>
+        </button>
+        <button class="palette-item" data-type="turret" title="Torreta Centinela: Apunta y dispara láseres hacia la nave">
+          <span class="palette-icon">🎯</span>
+          <span class="palette-name">Torreta</span>
+          <span class="palette-tag new-tag">NUEVO</span>
+        </button>
+        <button class="palette-item" data-type="gravity_well" title="Vórtice Gravitatorio: Atrae a los vehículos hacia su núcleo">
+          <span class="palette-icon">🌀</span>
+          <span class="palette-name">Vórtice</span>
+          <span class="palette-tag new-tag">NUEVO</span>
+        </button>
+        <button class="palette-item" data-type="yellow_barrier" title="Barrera Amarilla: Blindada contra láser, solo se rompe con misiles">
+          <span class="palette-icon">⚠️</span>
+          <span class="palette-name">Barrera Amarilla</span>
+        </button>
+        <button class="palette-item" data-type="red_barrier" title="Barrera Roja: Se destruye con balas láser o misiles">
+          <span class="palette-icon">💥</span>
+          <span class="palette-name">Barrera Roja</span>
+        </button>
+        <button class="palette-item" data-type="planet" title="Planeta / Mina: Se destruye con balas láser o misiles">
+          <span class="palette-icon">🪐</span>
+          <span class="palette-name">Planeta</span>
+        </button>
+        <button class="palette-item" data-type="energy_core" title="Núcleo de Energía: Otorga puntos y recarga turbo">
+          <span class="palette-icon">💎</span>
+          <span class="palette-name">Núcleo Orbe</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Controles Táctiles en Pantalla para Móviles -->
+  <div id="mobile-controls" class="mobile-controls-overlay hidden">
+    <!-- Controles Izquierdos: Dirección -->
+    <div class="touch-cluster touch-left">
+      <button id="touch-btn-left" class="touch-btn touch-btn-dir" aria-label="Giro a la izquierda">
+        <span class="touch-icon">◀</span>
+      </button>
+      <button id="touch-btn-right" class="touch-btn touch-btn-dir" aria-label="Giro a la derecha">
+        <span class="touch-icon">▶</span>
+      </button>
+    </div>
+
+    <!-- Controles Derechos: Acciones (Turbo, Láser, Misil) -->
+    <div class="touch-cluster touch-right">
+      <button id="touch-btn-turbo" class="touch-btn touch-btn-turbo" aria-label="Turbo Overdrive">
+        <span class="touch-icon">⚡</span>
+        <span class="touch-label">TURBO</span>
+      </button>
+      <button id="touch-btn-laser" class="touch-btn touch-btn-laser" aria-label="Disparo Láser">
+        <span class="touch-icon">🔴</span>
+        <span class="touch-label">LÁSER</span>
+      </button>
+      <button id="touch-btn-missile" class="touch-btn touch-btn-missile" aria-label="Lanzar Misil">
+        <div id="touch-missile-fill" class="touch-cooldown-fill"></div>
+        <span class="touch-icon">🚀</span>
+        <span id="touch-missile-text" class="touch-label">MISIL</span>
+      </button>
     </div>
   </div>
 
